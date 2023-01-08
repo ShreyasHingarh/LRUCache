@@ -26,9 +26,9 @@ namespace LRUCache
         public int Count;
         public Node<TKey,TValue> Head;
         public Node<TKey, TValue> Tail;
-        public void AddLast(TKey key, TValue value)
+
+        public void AddLast(Node<TKey, TValue> nodeToAdd)
         {
-            Node<TKey, TValue> nodeToAdd = new Node<TKey, TValue>(key, value,null,null);
             if (Head == null)
             {
                 Head = nodeToAdd;
@@ -43,9 +43,8 @@ namespace LRUCache
             Count++;
         }
 
-        public void AddFirst(TKey key, TValue value)
+        public void AddFirst(Node<TKey, TValue> nodeToAdd)
         {
-            Node<TKey, TValue> nodeToAdd = new Node<TKey, TValue>(key,value,null,null);
             if (Head == null)
             {
                 Head = nodeToAdd;
@@ -60,37 +59,35 @@ namespace LRUCache
             Count++;
         }
 
-        public void AddBefore(Node<TKey, TValue> node, TKey key,TValue value)
+        public void AddBefore(Node<TKey, TValue> node, Node<TKey, TValue> nodeToAdd)
         {
             if (node == Head)
             {
-                AddFirst(key,value);
+                AddFirst(nodeToAdd);
                 return;
             }
 
-            Node<TKey, TValue> nodeToAdd = new Node<TKey, TValue>(key, value, node.Previous, node);
             node.Previous.Next = nodeToAdd;
             node.Previous = nodeToAdd;
             Count++;
         }
-        public void AddAfter(Node<TKey, TValue> node, TKey key, TValue value)
+        public void AddAfter(Node<TKey, TValue> node, Node<TKey, TValue> nodeToAdd)
         {
             if (node == Tail)
             {
-                AddLast(key,value);
+                AddLast(nodeToAdd);
                 return;
             }
-            Node<TKey, TValue> nodeToAdd = new Node<TKey, TValue>(key,value,node,node.Next);
             node.Next.Previous = nodeToAdd;
             node.Next = nodeToAdd;
             Count++;
 
         }
-        public void RemoveFirst()
+        public bool RemoveFirst()
         {
             if (Head == null)
             {
-                return;
+                return false;
             }
             if (Count == 1)
             {
@@ -103,52 +100,56 @@ namespace LRUCache
                 Head.Previous = null;
             }
             Count--;
+            return true;
         }
 
-        public void RemoveLast()
+        public bool RemoveLast()
         {
             if (Tail == null)
             {
-                return;
+                return false;
             }
             if (Count == 1)
             {
                 Tail = null;
                 Head = null;
                 Count--;
-                return;
+                return true;
             }
 
             Tail = Tail.Previous;
             Tail.Next = null;
             Count--;
+            return true;
         }
-        public void Remove(TKey key, TValue value)
+        public bool Remove(Node<TKey, TValue> nodeToAdd)
         {
             if (Head == null || Tail == null || Count == 0)
             {
-                return;
+                return false;
             }
-            if (Head.Key.Equals(key) && Head.Value.Equals(value))
+            if (Head.Key.Equals(nodeToAdd.Key) && Head.Value.Equals(nodeToAdd.Value))
             {
-                RemoveFirst();
-                return;
+                return RemoveFirst();
             }
-            var node = Search(key, value);
-            if (node != null) return;
-            var previous = node.Previous;
-            previous.Next = node.Next;
-            node.Next.Previous = previous;
-            node = null;
+            if(Tail.Key.Equals(nodeToAdd.Key) && Tail.Value.Equals(nodeToAdd.Value))
+            {
+                return RemoveLast();
+            }
+            if (Search(nodeToAdd.Key) == null) return false;
+            var previous = nodeToAdd.Previous;
+            previous.Next = nodeToAdd.Next;
+            nodeToAdd.Next.Previous = previous;
+            
             Count--;
+            return true;
         }
 
-
-        public Node<TKey,TValue> Search(TKey key, TValue value)
+        public Node<TKey,TValue> Search(TKey key)
         {
             // loop through nodes, find value return
             var Node = Head;
-            while (Node != null && !Node.Key.Equals(key) && !Node.Value.Equals(value))
+            while (Node != null && !Node.Key.Equals(key))
             {
                 Node = Node.Next;
             }
@@ -162,12 +163,31 @@ namespace LRUCache
             Count = 0;
         }
 
-        public bool Contains(TKey key, TValue value)
+        public bool Contains(TKey key)
         {
-            return Search(key,value) == null;
+            return Search(key) == null;
         }
-
-
+        public void MoveToHead(Node<TKey,TValue> node)
+        {
+            if (Head == node) return;
+            if(Tail == node)
+            {
+                Tail = node.Previous;
+                
+            }
+            if(node.Previous != null)
+            {
+                node.Previous.Next = node.Next;
+            }
+            if(node.Next != null)
+            {
+                node.Next.Previous = node.Previous;
+            }
+            node.Previous = null;
+            node.Next = Head;
+            Head.Previous = node;
+            Head = node;
+        }
         public void Print()
         {
             var temp = Head;
